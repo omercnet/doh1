@@ -1,0 +1,4 @@
+[tools]
+fnox = "latest"
+node = "22"
+age = "latest"

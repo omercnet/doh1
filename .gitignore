@@ -1,0 +1,12 @@
+node_modules/
+pnpm-lock.yaml
+test-results/
+playwright-report/
+playwright/.cache/
+.DS_Store
+*.png
+
+/blob-report/
+/playwright/.auth/
+
+fnox.toml
