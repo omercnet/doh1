@@ -66,12 +66,13 @@ async function doFullLogin(popup: Page, mainPage: Page): Promise<void> {
   const mfaText = popup.getByText("Verify your identity");
   const staySignedInButton = popup.getByRole("button", { name: "Yes" });
 
-  const isMfaPage = await mfaText
-    .waitFor({ state: "visible", timeout: 30000 })
-    .then(() => true)
-    .catch(() => false);
+  // Race: wait for either MFA page or Stay Signed In button
+  const result = await Promise.race([
+    mfaText.waitFor({ state: "visible", timeout: 30000 }).then(() => "mfa" as const),
+    staySignedInButton.waitFor({ state: "visible", timeout: 30000 }).then(() => "stay" as const),
+  ]);
 
-  if (isMfaPage) {
+  if (result === "mfa") {
     console.log("MFA: Clicking phone call option...");
     const callOption = popup.getByText(/Call \+/);
     await callOption.click({ timeout: 10000 });
