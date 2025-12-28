@@ -1,0 +1,94 @@
+name: Daily Attendance Form
+
+on:
+  schedule:
+    - cron: "0 6 * * 0-4" # Sunday-Thursday at 6:00 AM UTC (9:00 AM Israel)
+  workflow_dispatch:
+    inputs:
+      force_login:
+        description: "Force new login (ignore cached auth)"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  fill-form:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+
+      - name: Install mise
+        uses: jdx/mise-action@v2
+
+      - name: Install dependencies
+        run: mise exec -- npm ci
+
+      - name: Install Playwright Browsers
+        run: mise exec -- npx playwright install chromium --with-deps
+
+      - name: Restore auth state from cache
+        if: ${{ github.event.inputs.force_login != 'true' }}
+        uses: actions/cache/restore@v4
+        with:
+          path: playwright/.auth/state.json
+          key: form-auth-state-v1
+
+      - name: Run form fill
+        env:
+          IDF_ID: ${{ secrets.IDF_ID }}
+          IDF_PASSWORD: ${{ secrets.IDF_PASSWORD }}
+        run: mise exec -- pnpm test
+
+      - name: Save auth state to cache
+        uses: actions/cache/save@v4
+        if: success()
+        with:
+          path: playwright/.auth/state.json
+          key: form-auth-state-v1-${{ github.run_id }}
+
+      - name: Encrypt and upload traces on failure
+        if: failure()
+        env:
+          AGE_RECIPIENT: ${{ secrets.AGE_RECIPIENT }}
+        run: |
+          if [ -d "test-results" ] && [ -n "$AGE_RECIPIENT" ]; then
+            tar -czf test-results.tar.gz test-results/
+            mise exec -- age -r "$AGE_RECIPIENT" -o test-results.tar.gz.age test-results.tar.gz
+            rm test-results.tar.gz
+          fi
+
+      - name: Upload encrypted traces
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: encrypted-test-results
+          path: test-results.tar.gz.age
+          retention-days: 7
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"❌ Daily attendance form submission failed! Check GitHub Actions for details."}' \
+              "$SLACK_WEBHOOK_URL"
+          fi
+
+      - name: Notify on success
+        if: success()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"✅ Daily attendance form submitted successfully!"}' \
+              "$SLACK_WEBHOOK_URL"
+          fi

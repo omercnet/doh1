@@ -1,0 +1,9 @@
+default_provider = "age"
+
+[providers.age]
+type = "age"
+recipients = ["YOUR_AGE_PUBLIC_KEY"]
+
+[secrets]
+IDF_ID = { provider = "age", value = "ENCRYPTED_VALUE" }
+IDF_PASSWORD = { provider = "age", value = "ENCRYPTED_VALUE" }
