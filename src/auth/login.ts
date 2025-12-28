@@ -7,22 +7,16 @@ export async function doPreLogin(page: Page): Promise<boolean> {
   await page.goto(config.authUrl);
 
   console.log("Pre-login: Filling ID number...");
-  await page
-    .getByRole("spinbutton", { name: 'מספר ת"ז' })
-    .fill(config.preLoginId);
+  await page.getByRole("spinbutton", { name: 'מספר ת"ז' }).fill(config.preLoginId);
 
   console.log("Pre-login: Clicking login button...");
-  const popupPromise = page
-    .waitForEvent("popup", { timeout: 5000 })
-    .catch(() => null);
+  const popupPromise = page.waitForEvent("popup", { timeout: 5000 }).catch(() => null);
   await page.getByRole("button", { name: "כניסה עם סיסמה קבועה" }).click();
 
   const popup = await popupPromise;
 
   if (!popup) {
-    console.log(
-      "Pre-login: No popup - session is valid, waiting for redirect...",
-    );
+    console.log("Pre-login: No popup - session is valid, waiting for redirect...");
     await page.waitForURL((url) => url.pathname === "/personalzone", {
       timeout: 30000,
     });
@@ -64,9 +58,7 @@ async function doFullLogin(popup: Page, mainPage: Page): Promise<void> {
   await popup.getByRole("button", { name: "Next" }).click();
 
   console.log("Login: Filling password...");
-  await popup
-    .getByRole("textbox", { name: "Enter the password for" })
-    .fill(config.azurePassword);
+  await popup.getByRole("textbox", { name: "Enter the password for" }).fill(config.azurePassword);
   await popup.getByRole("button", { name: "Sign in" }).click();
 
   console.log("Login: Waiting for MFA or Stay Signed In page...");
@@ -85,7 +77,7 @@ async function doFullLogin(popup: Page, mainPage: Page): Promise<void> {
     await callOption.click({ timeout: 10000 });
 
     console.log(
-      `MFA: Phone call initiated. Waiting up to ${config.mfaTimeoutMs / 1000}s for you to approve...`,
+      `MFA: Phone call initiated. Waiting up to ${config.mfaTimeoutMs / 1000}s for you to approve...`
     );
     console.log("MFA: >>> APPROVE THE PHONE CALL NOW <<<");
 

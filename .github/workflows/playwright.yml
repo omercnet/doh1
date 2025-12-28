@@ -19,18 +19,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: package.json
-
       - name: Install mise
         uses: jdx/mise-action@v2
 
-      - name: Install dependencies
-        run: mise exec -- npm ci
+      - name: Get pnpm store path
+        id: pnpm-store
+        run: echo "path=$(mise exec -- pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Install Playwright Browsers
-        run: mise exec -- npx playwright install chromium --with-deps
+      - name: Cache pnpm and Playwright
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.pnpm-store.outputs.path }}
+            ~/.cache/ms-playwright
+          key: deps-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        run: mise exec -- pnpm install --frozen-lockfile
+
+      - name: Install Playwright headless shell
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: mise exec -- pnpm exec playwright install chromium --only-shell
+
+      - name: Install Playwright system dependencies
+        run: mise exec -- pnpm exec playwright install-deps chromium
 
       - name: Restore auth state from cache
         if: ${{ github.event.inputs.force_login != 'true' }}

@@ -6,17 +6,31 @@
   "engines": {
     "node": ">=22"
   },
+  "type": "module",
   "scripts": {
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.24.0",
   "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
-    "@types/node": "^25.0.2"
+    "@types/node": "^25.0.2",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.7.4",
+    "typescript-eslint": "^8.50.1"
   }
 }

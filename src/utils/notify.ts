@@ -49,9 +49,7 @@ export async function notifyEmail(result: NotificationResult): Promise<void> {
   }
 
   console.log(`Email notification would be sent to: ${config.emailRecipient}`);
-  console.log(
-    `Subject: Form Submission ${result.success ? "Success" : "Failed"}`,
-  );
+  console.log(`Subject: Form Submission ${result.success ? "Success" : "Failed"}`);
   console.log(`Body: ${result.message}`);
 }
 
