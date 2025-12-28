@@ -85,12 +85,57 @@ Automated daily attendance form submission for IDF reservists using Playwright.
 | `IDF_ID`       | Your ID number (ת.ז.)  |
 | `IDF_PASSWORD` | Your Azure AD password |
 
+### Required Variables
+
+| Variable             | Description                                      |
+| -------------------- | ------------------------------------------------ |
+| `TS_OAUTH_CLIENT_ID` | Tailscale OIDC client ID                         |
+| `TS_AUDIENCE`        | Tailscale OIDC audience                          |
+| `TS_EXIT_NODE`       | Tailscale exit node hostname (your home machine) |
+
 ### Optional Secrets
 
 | Secret              | Description                                                                                                       |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `AGE_RECIPIENT`     | Age public key (starts with `age1...`) for encrypting failed test artifacts. Get it from `~/.config/fnox/age.txt` |
 | `SLACK_WEBHOOK_URL` | Slack webhook for notifications                                                                                   |
+
+### Tailscale Setup (OIDC)
+
+The IDF portal blocks access from cloud IPs (Azure AD Conditional Access). CI routes traffic through your home network via Tailscale using OIDC workload identity federation (no secrets needed).
+
+1. **Enable exit node on your home machine:**
+
+   ```bash
+   sudo tailscale up --advertise-exit-node
+   ```
+
+   Then approve it in the [Tailscale admin console](https://login.tailscale.com/admin/machines).
+
+2. **Add ACL tag for CI nodes:**
+   Add to your [Tailscale ACL policy](https://login.tailscale.com/admin/acls):
+
+   ```json
+   "tagOwners": {
+     "tag:ci": ["autogroup:admin"]
+   }
+   ```
+
+3. **Create OIDC credential:**
+   - Go to [Tailscale Settings → OAuth clients](https://login.tailscale.com/admin/settings/oauth)
+   - Click "Add OIDC credential"
+   - Issuer: `https://token.actions.githubusercontent.com`
+   - Audience: your tailnet name (e.g., `your-tailnet.ts.net`)
+   - Subject: `repo:omercnet/doh1:ref:refs/heads/main` (or use wildcards)
+   - Tags: `tag:ci`
+   - Scopes: `auth_keys` (writable)
+   - Copy the **Client ID** and **Audience**
+
+4. **Add GitHub repository variables:**
+   - Go to repo Settings → Secrets and variables → Actions → Variables
+   - Add `TS_OAUTH_CLIENT_ID` with the client ID
+   - Add `TS_AUDIENCE` with the audience
+   - Add `TS_EXIT_NODE` with your home machine's Tailscale hostname
 
 > **Note:** The age private key stays local in `~/.config/fnox/age.txt`. Only the public key goes to GitHub for encrypting artifacts you can decrypt locally.
 
@@ -131,12 +176,14 @@ If the cached session is stale:
 
 ### Common Issues
 
-| Issue             | Solution                                                   |
-| ----------------- | ---------------------------------------------------------- |
-| MFA timeout       | Be ready to approve the call within 3 minutes              |
-| Session expired   | Force re-login via workflow dispatch                       |
-| Already submitted | This is fine! Test passes with "Already submitted today ✓" |
-| Selectors changed | Update selectors in `src/form/fill-attendance.ts`          |
+| Issue                 | Solution                                                   |
+| --------------------- | ---------------------------------------------------------- |
+| MFA timeout           | Be ready to approve the call within 3 minutes              |
+| Session expired       | Force re-login via workflow dispatch                       |
+| Already submitted     | This is fine! Test passes with "Already submitted today ✓" |
+| Selectors changed     | Update selectors in `src/form/fill-attendance.ts`          |
+| "Cannot access" error | Azure AD blocking cloud IPs - check Tailscale exit node    |
+| Tailscale timeout     | Ensure home machine is online and exit node is approved    |
 
 ## 📁 Project Structure
 
