@@ -80,15 +80,10 @@ Automated daily attendance form submission for IDF reservists using Playwright.
 
 ### Required Secrets
 
-| Secret         | Description            |
-| -------------- | ---------------------- |
-| `IDF_ID`       | Your ID number (ת.ז.)  |
-| `IDF_PASSWORD` | Your Azure AD password |
-
-### Required Variables
-
-| Variable             | Description                                      |
+| Secret               | Description                                      |
 | -------------------- | ------------------------------------------------ |
+| `IDF_ID`             | Your ID number (ת.ז.)                            |
+| `IDF_PASSWORD`       | Your Azure AD password                           |
 | `TS_OAUTH_CLIENT_ID` | Tailscale OIDC client ID                         |
 | `TS_AUDIENCE`        | Tailscale OIDC audience                          |
 | `TS_EXIT_NODE`       | Tailscale exit node hostname (your home machine) |
@@ -131,8 +126,8 @@ The IDF portal blocks access from cloud IPs (Azure AD Conditional Access). CI ro
    - Scopes: `auth_keys` (writable)
    - Copy the **Client ID** and **Audience**
 
-4. **Add GitHub repository variables:**
-   - Go to repo Settings → Secrets and variables → Actions → Variables
+4. **Add GitHub repository secrets:**
+   - Go to repo Settings → Secrets and variables → Actions → Secrets
    - Add `TS_OAUTH_CLIENT_ID` with the client ID
    - Add `TS_AUDIENCE` with the audience
    - Add `TS_EXIT_NODE` with your home machine's Tailscale hostname
